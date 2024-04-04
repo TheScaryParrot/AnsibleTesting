@@ -1,0 +1,21 @@
+- name: First Play
+  user: fabio
+  become: yes
+  hosts: myhosts
+  tasks:
+    - name: Ping Hosts
+      ansible.builtin.ping:
+
+    - name: Install Apache
+      ansible.builtin.apt:
+        name: apache2
+
+    - name: Start Apache Service
+      ansible.builtin.service:
+        name: apache2
+        state: started
+
+    - name: Copy Index.html
+      template:
+        src: "../ansibleQuickstart/index.html"
+        dest: "/var/www/html/index.html"
