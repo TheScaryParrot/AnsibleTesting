@@ -1,0 +1,81 @@
+- name: Kafka Setup Playbook
+  user: fabio
+  become: yes
+  hosts: myhosts
+
+  vars:
+    directory: "/opt/kafka/"
+    kafka_directory: "{{ directory }}/kafka_2.13-3.7.0"
+    message: hello world
+
+  tasks:
+    - name: Ping Hosts
+      ansible.builtin.ping:
+
+#setup
+
+    - name: Make working directory
+      ansible.builtin.file:
+        path: "{{ directory }}"
+        state: directory
+
+    - name: Copy Kafka binary
+      ansible.builtin.copy:
+        src: "../ansibleQuickstart/kafka-files/kafka_2.13-3.7.0.tgz"
+        dest: "{{ directory }}/kafka_2.13-3.7.0.tgz"
+        mode: preserve
+
+    - name: Unzip Kafka binary
+      ansible.builtin.unarchive:
+        src: "{{ directory }}/kafka_2.13-3.7.0.tgz"
+        dest: "{{ directory }}"
+        remote_src: yes
+
+    - name: Template Zookeeper Start Service
+      template:
+        src: "../ansibleQuickstart/kafka-files/zookeeper-server.service"
+        dest: "/usr/lib/systemd/system"
+
+    - name: Template Kafka Start Service
+      template:
+        src: "../ansibleQuickstart/kafka-files/kafka-server.service"
+        dest: "/usr/lib/systemd/system/"
+
+    - name: Run Zookeeper Service
+      systemd_service:
+        name: zookeeper-server
+        state: started
+
+    - name: Run Kafka Service
+      systemd_service:
+        name: kafka-server
+        state: started
+
+#testing
+
+    - name: Consume Message from Topic
+      shell: "bin/kafka-console-consumer.sh --topic quickstart-events  --bootstrap-server localhost:9092 > {{ directory }}/consumed_message.txt"
+      args:
+        chdir: "{{ kafka_directory }}"
+      async: 60
+      poll: 0
+
+    - name: Produce Message to Topic
+      shell: "echo {{ message }} | bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server localhost:9092"
+      args:
+        chdir: "{{ kafka_directory }}"
+
+    - name: Wait 15 seconds
+      command: /bin/sleep 15
+
+    - name: Get file bytecount
+      shell:
+        cmd: "wc -c consumed_message.txt | awk {'print $1'}"
+      args:
+        chdir: "{{ directory }}"
+      register: consumed_count
+
+    - name: Print whether file is empty
+      debug:
+        msg: "{{ 'empty: test failed' if consumed_count.stdout == '0' else 'not empty: test successful' }}"
+
