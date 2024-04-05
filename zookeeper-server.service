@@ -1,0 +1,11 @@
+[Unit]
+Description=Zookeeper service
+
+[Service]
+Type=forking
+User=fabio
+ExecStart=echo m25c | sudo -S /opt/kafka/kafka_2.13-3.7.0/bin/zookeeper-server-start.sh -daemon /opt/kafka/kafka_2.13-3.7.0/config/server.properties
+#ExecStop=echo m25c | sudo -S /opt/kafka/kafka_2.13-3.7.0/bin/zookeeper-server-stop.sh
+
+[Install]
+WantedBy=multi-user.target
