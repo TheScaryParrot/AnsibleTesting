@@ -1,0 +1,59 @@
+- name: First Play
+  user: fabio
+  become: yes
+  hosts: myhosts
+
+  vars:
+    directory: "/opt/kafka/"
+    kafka_directory: "{{ directory }}/kafka_2.13-3.7.0"
+    message: hello world
+
+  tasks:
+    - name: Ping Hosts
+      ansible.builtin.ping:
+
+    - name: Make working directory
+      ansible.builtin.file:
+        path: "{{ directory }}"
+        state: directory
+
+    - name: Copy Kafka binary
+      ansible.builtin.copy:
+        src: "../ansibleQuickstart/kafka-files/kafka_2.13-3.7.0.tgz"
+        dest: "{{ directory }}/kafka_2.13-3.7.0.tgz"
+        mode: preserve
+
+    - name: Unzip Kafka binary
+      ansible.builtin.unarchive:
+        src: "{{ directory }}/kafka_2.13-3.7.0.tgz"
+        dest: "{{ directory }}"
+        remote_src: yes
+
+    - name: Template Zookeeper Start Service
+      template:
+        src: "../ansibleQuickstart/kafka-files/zookeeper-server.service"
+        dest: "/usr/lib/systemd/system"
+
+    - name: Template Kafka Start Service
+      template:
+        src: "../ansibleQuickstart/kafka-files/kafka-server.service"
+        dest: "/usr/lib/systemd/system/"
+
+    - name: Run Zookeeper Service
+      ansible.builtin.systemd_service:
+        name: zookeeper-server
+        state: started
+
+    - name: Run Kafka Service
+      systemd_service:
+        name: kafka-server
+        state: started
+
+
+    - name: Produce Message to Topic
+      shell: "echo {{ message }} | bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server localhost:9092"
+      args:
+        chdir: "{{ kafka_directory }}"
+
+
+

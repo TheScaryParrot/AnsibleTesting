@@ -1,0 +1,11 @@
+[Unit]
+Description=kafka service
+
+[Service]
+Type=simple
+User=root
+ExecStart=/opt/kafka/kafka_2.13-3.7.0/bin/kafka-server-start.sh /opt/kafka/kafka_2.13-3.7.0/config/server.properties
+ExecStop=/opt/kafka/kafka_2.13-3.7.0/bin/kafka-server-stop.sh
+
+[Install]
+WantedBy=multi-user.target
